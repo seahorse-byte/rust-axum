@@ -5,7 +5,8 @@ pub use self::error::{Error, Result};
 use axum::{
     extract::{Path, Query},
     http::StatusCode,
-    response::{Html, IntoResponse},
+    middleware,
+    response::{Html, IntoResponse, Response},
     routing::{get, get_service},
     Json, Router,
 };
@@ -21,15 +22,26 @@ async fn main() {
     let app = Router::new()
         .merge(routes_hello())
         .merge(web::routes_login::routes())
+        .layer(middleware::map_response(main_response_mapper))
         .fallback_service(routes_static());
 
     // START SERVER
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    println!();
     println!("Listening on http://{}", addr);
+    println!();
+
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
+
+    async fn main_response_mapper(res: Response) -> Response {
+        println!("->> {:<12} - main_response_mapper", "RES_MAPPER");
+
+        println!();
+        res
+    }
 
     // STATIC ROUTES
     fn routes_static() -> Router {
