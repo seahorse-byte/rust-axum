@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
 }
 
 async fn main_response_mapper(res: Response) -> Response {
-    println!("->> {:<12} - main_response_mapper", "RES_MAPPER");
+    println!("->> {:12} - main_response_mapper", "RES_MAPPER");
 
     println!();
     res
@@ -73,12 +73,12 @@ struct HelloParams {
 }
 
 async fn handler_hello(Query(params): Query<HelloParams>) -> impl IntoResponse {
-    println!("->> {:<12} - handler_hello - {params:?}", "HANDLER");
+    println!("->> {:12} - handler_hello - {params:?}", "HANDLER");
     let name = params.name.as_deref().unwrap_or("World");
     Html(format!("<h1>Helooo {name}</h1>"))
 }
 
 async fn handler_hello2(Path(name): Path<String>) -> impl IntoResponse {
-    println!("->> {:<12} - handler_hello2 - {name:?}", "HANDLER");
+    println!("->> {:12} - handler_hello2 - {name:?}", "HANDLER");
     Html(format!("<h1>Helooo {name}</h1>"))
 }

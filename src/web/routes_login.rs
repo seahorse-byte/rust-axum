@@ -9,7 +9,7 @@ pub fn routes() -> Router {
 }
 
 async fn api_login(cookies: Cookies, payload: Json<LoginPayload>) -> Result<Json<Value>> {
-    println!("->> {:<12} - api_login - {payload:?}", "HANDLER");
+    println!("->> {:12} - api_login - {payload:?}", "HANDLER");
 
     // TODO: implement real db connection and login logic
 
