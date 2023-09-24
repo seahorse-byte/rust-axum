@@ -25,3 +25,37 @@ impl IntoResponse for Error {
         (StatusCode::INTERNAL_SERVER_ERROR, "UNHANDLED_CLIENT_ERROR").into_response()
     }
 }
+
+impl Error {
+    pub fn client_status_and_error(&self) -> (StatusCode, ClientError) {
+        #[allow(unreachable_patterns)]
+        match self {
+            // Login
+            Self::LoginFail => (StatusCode::FORBIDDEN, ClientError::LOGIN_FAIL),
+
+            // Auth
+            Self::AuthFailNoAuthTokenCookie
+            | Self::AuthFailTokenWrongFormat
+            | Self::AuthFailCtxNotInRequestExt => (StatusCode::FORBIDDEN, ClientError::NO_AUTH),
+
+            // Model
+            Self::TicketDeleteFailIDNotFound { .. } => {
+                (StatusCode::BAD_REQUEST, ClientError::INVALID_PARAMS)
+            }
+            // Fallback
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                ClientError::SERVICE_ERROR,
+            ),
+        }
+    }
+}
+
+#[derive(Debug, strum_macros::AsRefStr)]
+#[allow(non_camel_case_types)]
+pub enum ClientError {
+    LOGIN_FAIL,
+    NO_AUTH,
+    INVALID_PARAMS,
+    SERVICE_ERROR,
+}
