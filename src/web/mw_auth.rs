@@ -1,28 +1,48 @@
+use crate::ctx::Ctx;
 use crate::web::AUTH_TOKEN;
 use crate::{Error, Result};
+use async_trait::async_trait;
+use axum::extract::FromRequestParts;
+use axum::http::request::Parts;
 use axum::response::Response;
+use axum::RequestPartsExt;
 use axum::{http::Request, middleware::Next};
 use lazy_regex::{regex, regex_captures};
 use tower_cookies::Cookies;
 
 pub async fn mw_require_auth<B>(
-    cookies: Cookies,
+    ctx: Result<Ctx>,
     req: Request<B>,
     next: Next<B>,
 ) -> Result<Response> {
     println!("->> {:12} - mw_require_auth", "MIDDLEWARE");
-    let auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
-
-    let (user_id, exp, sign) = auth_token
-        .ok_or(Error::AuthFailNoAuthTokenCookie)
-        .and_then(parse_auth_token)?;
-
+    ctx?;
     Ok(next.run(req).await)
 }
 
+// Ctx extractor
+#[async_trait]
+impl<S: Send + Sync> FromRequestParts<S> for Ctx {
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self> {
+        println!("->> {:12} - Ctx extractor", "EXTRACTOR");
+
+        let cookies = parts.extract::<Cookies>().await.unwrap();
+        let auth_token = cookies.get(AUTH_TOKEN).map(|c| c.value().to_string());
+        let (user_id, exp, sign) = auth_token
+            .ok_or(Error::AuthFailNoAuthTokenCookie)
+            .and_then(parse_auth_token)?;
+
+        // TODO: Token components validation
+
+        Ok(Ctx::new(user_id))
+    }
+}
+// Ctx extractor
+
 // Parse a token of format `user-[user-id].[exipration].[signature]`
 // Returns (user_id, expirations, signature)
-
 fn parse_auth_token(token: String) -> Result<(u64, String, String)> {
     let (_whole, user_id, exp, sign) = regex_captures!(r#"^user-(\d+)\.(.+)\.(.+)"#, &token)
         .ok_or(Error::AuthFailTokenWrongFormat)?;

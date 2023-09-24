@@ -16,6 +16,7 @@ use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 use tower_http::services::ServeDir;
 
+mod ctx;
 mod error;
 mod model;
 mod web;
